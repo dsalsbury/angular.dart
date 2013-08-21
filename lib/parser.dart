@@ -145,7 +145,6 @@ stripTrailingNulls(List l) {
 
 var _undefined_ = new Symbol("UNDEFINED");
 
-// Returns a tuple [found, value]
 _getterChild(value, childKey) {
   if (value is List && childKey is num) {
     if (childKey < value.length) {
@@ -157,24 +156,32 @@ _getterChild(value, childKey) {
       return value[childKey];
     }
   } else {
-    InstanceMirror instanceMirror = reflect(value);
+    // check for variables, getters, methods
     Symbol curSym = new Symbol(childKey);
-
-    try {
-      // maybe it is a member field?
-      return instanceMirror.getField(curSym).reflectee;
-    } on NoSuchMethodError catch (e) {
-      // maybe it is a member method?
-      if (instanceMirror.type.members.containsKey(curSym)) {
-        MethodMirror methodMirror = instanceMirror.type.members[curSym];
+    InstanceMirror instanceMirror = reflect(value);
+    ClassMirror classMirror = instanceMirror.type;
+    do {
+      var memberMirror = classMirror.members[curSym];
+      if (memberMirror is VariableMirror ||
+          memberMirror is MethodMirror && memberMirror.isGetter) {
+        return instanceMirror.getField(curSym).reflectee;
+      }
+      if (memberMirror is MethodMirror) {
         return _relaxFnArgs(([a0, a1, a2, a3, a4, a5]) {
           var args = stripTrailingNulls([a0, a1, a2, a3, a4, a5]);
           return instanceMirror.invoke(curSym, args).reflectee;
         });
       }
-    }
+      classMirror = classMirror.superclass;
+    } while (classMirror != null);
   }
-  return _undefined_;
+
+  try {
+    // last resort: does value respond to curSym via noSuchMethod()?
+    return instanceMirror.getField(curSym).reflectee;
+  } on NoSuchMethodError catch (e) {
+    return _undefined_;
+  }
 }
 
 getter(self, locals, path) {
