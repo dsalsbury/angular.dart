@@ -18,6 +18,9 @@ class Mixin {}
 class MixedTestData extends TestData with Mixin {
 }
 
+class SubTestData extends TestData {
+}
+
 class MapData implements Map {
   operator[](x) => "mapped-$x";
   containsKey(x) => true;
@@ -611,6 +614,16 @@ main() {
 
       it('should support calling member functions', () {
         expect(parser('method()').eval(new TestData())).toEqual('testMethod');
+      });
+
+
+      it('should support returning superclass member functions', () {
+        expect(parser('method').eval(new SubTestData())()).toEqual('testMethod');
+      });
+
+
+      it('should support calling superclass member functions', () {
+        expect(parser('method()').eval(new SubTestData())).toEqual('testMethod');
       });
 
 
