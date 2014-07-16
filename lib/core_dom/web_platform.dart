@@ -54,6 +54,8 @@ class PlatformViewCache implements ViewCache {
   final ViewCache cache;
   final String selector;
   final WebPlatform platform;
+  final dom.HtmlDocument parseDocument =
+      dom.document.implementation.createHtmlDocument('');
 
   get viewFactoryCache => cache.viewFactoryCache;
   Http get http => cache.http;
@@ -63,7 +65,7 @@ class PlatformViewCache implements ViewCache {
 
   PlatformViewCache(this.cache, this.selector, this.platform);
 
-  ViewFactory fromHtml(String html, DirectiveMap directives) {
+  ViewFactory fromHtml(String html, DirectiveMap directives, [String url]) {
     ViewFactory viewFactory;
 
     if (selector != null && selector != "" && platform.shadowDomShimRequired) {
@@ -75,13 +77,30 @@ class PlatformViewCache implements ViewCache {
     }
 
     if (viewFactory == null) {
-      var div = new dom.DivElement();
+      var base;
+      var originalUri;
+      if (url != null) {
+        originalUri = Uri.parse(url);
+        base = parseDocument.createElement('base');
+        base.href = url;
+        parseDocument.head.append(base);
+      }
+      else {
+        originalUri = Uri.base;
+      }
+
+      var div = parseDocument.createElement('div');
       div.setInnerHtml(html, treeSanitizer: treeSanitizer);
 
       if (selector != null && selector != "" && platform.shadowDomShimRequired) {
         // This MUST happen before the compiler is called so that every dom element gets touched
         // before the compiler removes them for transcluding directives like `ng-if`
         platform.shimShadowDom(div, selector);
+      }
+
+      dom.document.adoptNode(div);
+      if (base != null) {
+        base.remove();
       }
 
       viewFactory = compiler(div.nodes, directives);
