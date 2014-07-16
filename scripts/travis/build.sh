@@ -56,9 +56,9 @@ if [[ $TESTS == "dart2js" ]]; then
     echo '-----------------------------------'
     cd $NGDART_BASE_DIR/example
     checkSize build/web/animation.dart.js 208021
-    checkSize build/web/bouncing_balls.dart.js 202325
+    checkSize build/web/bouncing_balls.dart.js 213243
     checkSize build/web/hello_world.dart.js 210000
-    checkSize build/web/todo.dart.js 203121
+    checkSize build/web/todo.dart.js 214816
     if ((SIZE_TOO_BIG_COUNT > 0)); then
       exit 1
     else
@@ -125,7 +125,7 @@ fi
 
 
 
-echo '-------------------------'
+echo '-------------------------' 
 echo '-- DOCS: Generate Docs --'
 echo '-------------------------'
 if [[ ${TRAVIS_JOB_NUMBER:(-2)} == ".1" ]]; then
