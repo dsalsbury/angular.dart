@@ -6,6 +6,7 @@ import 'package:angular/tools/transformer/expression_generator.dart';
 import 'package:angular/tools/transformer/metadata_generator.dart';
 import 'package:angular/tools/transformer/static_angular_generator.dart';
 import 'package:angular/tools/transformer/html_dart_references_generator.dart';
+import 'package:angular/tools/transformer/type_relative_uri_generator.dart';
 import 'package:angular/tools/transformer/options.dart';
 import 'package:barback/barback.dart';
 import 'package:code_transformers/resolver.dart';
@@ -122,6 +123,7 @@ List<List<Transformer>> _createPhases(TransformOptions options) {
     [ new HtmlDartReferencesGenerator(options) ],
     [ new di.InjectorGenerator(options.diOptions, resolvers) ],
     [ new _SerialTransformer([
+      new TypeRelativeUriGenerator(options, resolvers),
       new ExpressionGenerator(options, resolvers),
       new MetadataGenerator(options, resolvers),
       new StaticAngularGenerator(options, resolvers)

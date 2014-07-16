@@ -6,9 +6,9 @@ var env = process.env,
 var runningOnTravis = (env.TRAVIS !== undefined);
 
 
-function getBaseUrl() {
-  if (env.NGDART_EXAMPLE_BASEURL) {
-    return env.NGDART_EXAMPLE_BASEURL;
+function getBaseUrl(configWithEnvKey) {
+  if (env[configWithEnvKey.envVar]) {
+    return env[configWithEnvKey.envVar];
   } else if (env.USER == 'chirayu') {
     return 'http://example.ngdart.localhost';
   } else {

@@ -4,7 +4,7 @@
  *
  * DARTIUM: The full path to the Dartium binary.
  *
- * NGDART_EXAMPLE_BASEURL: Overrides the default baseUrl to one of your
+ * TEST_EXAMPLE_BASEURL: Overrides the default baseUrl to one of your
  *     choosing.  (The default is http://localhost:8080 which is the
  *     correct if you simply run "pub serve" inside the example folder
  *     of the AngularDart repo.)
@@ -29,7 +29,9 @@ var config = {
     count: 4
   }],
 
-  baseUrl: configQuery.getBaseUrl(),
+  baseUrl: configQuery.getBaseUrl({
+      envVar: "TEST_EXAMPLE_URL"
+  }),
 
   jasmineNodeOpts: {
     isVerbose: true, // display spec names.
