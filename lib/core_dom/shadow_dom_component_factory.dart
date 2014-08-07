@@ -20,7 +20,8 @@ abstract class BoundComponentFactory {
     }
     if (component.templateUrl != null) {
       var url = uriResolver.resolve(component.templateUrl, type);
-      return viewCache.fromUrl(url, directives);
+      var baseUri = Uri.parse(url).toString();
+      return viewCache.fromUrl(url, directives, baseUri);
     }
     return null;
   }
@@ -93,11 +94,12 @@ class BoundShadowDomComponentFactory implements BoundComponentFactory {
     WebPlatform platform = _f.platform;
     ComponentCssRewriter componentCssRewriter = _f.componentCssRewriter;
     dom.NodeTreeSanitizer treeSanitizer = _f.treeSanitizer;
+    ResourceUrlResolver urlResolver = new ResourceUrlResolver();
 
     return _f.styleElementCache.putIfAbsent(
         new _ComponentAssetKey(_tag, cssUrl), () =>
         http.get(cssUrl, cache: templateCache)
-        .then((resp) => absolute.resolveCssText(resp.responseText, Uri.parse(cssUrl)),
+        .then((resp) => urlResolver.resolveCssText(resp.responseText, Uri.parse(cssUrl)),
         onError: (e) => '/*\n$e\n*/\n')
         .then((String css) {
 

@@ -20,7 +20,7 @@ import 'package:angular/core_dom/directive_injector.dart';
 export 'package:angular/core_dom/directive_injector.dart' show DirectiveInjector;
 
 import 'package:angular/core_dom/annotation_uri_resolver.dart';
-import 'package:angular/core_dom/absolute_uris.dart' as absolute;
+import 'package:angular/core_dom/absolute_uris.dart';
 
 import 'package:angular/change_detection/watch_group.dart' show Watch, PrototypeMap;
 import 'package:angular/change_detection/ast_parser.dart';

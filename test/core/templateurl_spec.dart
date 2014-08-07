@@ -115,21 +115,21 @@ void main() {
             (Http http, Compiler compile, Scope rootScope,  Logger log,
              Injector injector, MockHttpBackend backend, DirectiveMap directives) {
           backend.expectGET(expected).respond(200, '<div log="SIMPLE">Simple!</div>');
-  
+
           var element = es('<div><$component log>ignore</$component><div>');
           compile(element, directives)(rootScope, injector.get(DirectiveInjector), element);
-  
+
           microLeap();
           backend.flush();
           microLeap();
-  
+
           expect(element[0]).toHaveText('Simple!');
           rootScope.apply();
           // Note: There is no ordering.  It is who ever comes off the wire first!
           expect(log.result()).toEqual('LOG; SIMPLE');
         })));
       }
-      
+
       testResolution('simple relative url', 'base/test/core/simple.html', 'simple-url');
       testResolution('./relative url', 'base/test/core/simple.html', 'dot-slash-url');
       testResolution('absolute url', '/simple.html', 'absolute-url');
@@ -161,9 +161,7 @@ void main() {
       it('should use template-relative URIs', async(inject(
           (Http http, Compiler compile, Scope rootScope,  Logger log,
            Injector injector, MockHttpBackend backend, DirectiveMap directives) {
-        var templateSrc = 'base/test/core/simple.html';
-        var templateUri = Uri.base.resolve('foo/foo.html');
-        backend.expectGET(templateSrc).respond(200, '<div><img src="foo.png"/></div>');
+        backend.expectGET("base/test/core/simple.html").respond(200, '<div><img src="foo.png"/></div>');
 
         var element = es('<div><simple-url log>ignore</simple-url><div>');
         compile(element, directives)(rootScope, injector.get(DirectiveInjector), element);
@@ -173,7 +171,8 @@ void main() {
         microLeap();
 
         var img = element[0].children[0].shadowRoot.querySelector('img');
-        expect(img.src).toEqual(Uri.base.resolve('foo.png').toString());
+        print("img=" + img.src);
+        expect(img.src).toEqual(Uri.base.resolve('base/test/core/foo.png').toString());
       })));
 
       it('should load a CSS file into a style', async(
@@ -198,7 +197,7 @@ void main() {
         // Note: There is no ordering.  It is who ever comes off the wire first!
         expect(log.result()).toEqual('LOG; SIMPLE');
       }));
-      
+
       it('should use template-relative CSS URIs', async(
           (Http http, Compiler compile, Scope rootScope, Logger log,
            Injector injector, MockHttpBackend backend, DirectiveMap directives) {
@@ -234,7 +233,7 @@ void main() {
           (Http http, Compiler compile, Scope rootScope, Injector injector,
            MockHttpBackend backend, DirectiveMap directives) {
         var element = es('<div><inline-with-css log>ignore</inline-with-css><div>');
-        
+
         backend.expectGET('base/test/core/simple.css').respond(500, 'some error');
         compile(element, directives)(rootScope, injector.get(DirectiveInjector), element);
 

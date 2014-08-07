@@ -1,6 +1,7 @@
 library angular.test.core_dom.uri_resolver_spec;
 
-import 'package:angular/core_dom/absolute_uris.dart' as absolute;
+import 'package:angular/core_dom/absolute_uris.dart';
+import 'package:angular/core_dom/annotation_uri_resolver.dart';
 import '../_specs.dart';
 
 import 'dart:mirrors';
@@ -18,16 +19,13 @@ void main() {
       container.remove();
     });
 
-    // TODO(chirayu): Repeat all these tests again with originalBase set to
-    //     reflectType(SomeTypeInThisFile).owner.uri, which will be an http URL
-    //     instead of a package: URL (because of the way karma runs the tests)
-    //     and ensure that after resolution, the result doesn't have a protocol
-    //     or domain but contains the full path.
     var originalBase = Uri.parse('package:angular/test/core_dom/absolute_uris_spec.dart');
+    ResourceUrlResolver resourceResolver = new ResourceUrlResolver();
 
     testResolution(url, expected) {
+      var baseUri = originalBase;
       it('resolves attribute URIs $url to $expected', () {
-        var html = absolute.resolveHtml("<img src='$url'>", originalBase);
+        var html = resourceResolver.resolveHtml("<img src='$url'>", baseUri);
         expect(html).toEqual('<img src="$expected">');
       });
     }
@@ -38,8 +36,22 @@ void main() {
     testResolution('/foo.html', '/foo.html');
     testResolution('http://google.com/foo.html', 'http://google.com/foo.html');
 
+    // Set originalBase to an http URL type instead of a 'package:' URL (because of
+    // the way karma runs the tests) and ensure that after resolution, the result doesn't
+    // have a protocol or domain but contains the full path
+    var typeMirror = reflectType(NullSanitizer);
+    LibraryMirror lib = typeMirror.owner;
+    var originalBase2 = lib.uri;
+
+    testResolution('packages/angular/test/core_dom/foo.html', 'packages/angular/test/core_dom/foo.html');
+    testResolution('foo.html', 'packages/angular/test/core_dom/foo.html');
+    testResolution('./foo.html', 'packages/angular/test/core_dom/foo.html');
+    testResolution('/foo.html', '/foo.html');
+    testResolution('http://google.com/foo.html', 'http://google.com/foo.html');
+
+
     testTemplateResolution(url, expected) {
-      expect(absolute.resolveHtml('''
+      expect(resourceResolver.resolveHtml('''
         <template>
           <img src="$url">
         </template>''', originalBase)).toEqual('''
@@ -51,7 +63,7 @@ void main() {
     it('resolves template contents', () {
         testTemplateResolution('foo.png', 'packages/angular/test/core_dom/foo.png');
     });
-    
+
     it('does not change absolute urls when they are resolved', () {
       testTemplateResolution('/foo/foo.png', '/foo/foo.png');
     });
@@ -63,9 +75,9 @@ void main() {
             background-image: url(foo.png);
           }
         </style>''');
-      
-      html_style = absolute.resolveHtml(html_style, originalBase).toString();
-      
+
+      html_style = resourceResolver.resolveHtml(html_style, originalBase).toString();
+
       var resolved_style = ('''
         <style>
           body {
@@ -82,8 +94,8 @@ void main() {
           @import 'bar.css';
         </style>''');
 
-      html_style = absolute.resolveHtml(html_style, originalBase).toString();
-      
+      html_style = resourceResolver.resolveHtml(html_style, originalBase).toString();
+
       var resolved_style = ('''
         <style>
           @import url('packages/angular/test/core_dom/foo.css');

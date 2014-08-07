@@ -11,9 +11,6 @@ class DynamicAnnotationUriResolver implements AnnotationUriResolver {
   String resolve(String uri, Type type) {
     var typeMirror = reflectType(type);
     LibraryMirror lib = typeMirror.owner;
-    if (typeMirror == Uri.base) {
-      uri = Uri.base.resolve(uri).path;
-    }
     return AnnotationUriResolver.combine(lib.uri, uri);
   }
 }
