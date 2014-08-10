@@ -87,7 +87,7 @@ void _writeHeader(AssetId id, StringSink sink) {
   sink.write('''
 library ${id.package}.$libPath.generated_type_uris;
 
-import 'package:angular/core_dom/annotation_uri_resolver.dart';
+import 'package:angular/core_dom/type_to_uri_mapper.dart';
 ''');
 }
 
@@ -96,12 +96,12 @@ void _writePreamble(StringSink sink) {
 
 /// Used when URIs have been converted to be page-relative at build time.
 class _StaticAnnotationUriResolver implements AnnotationUriResolver {
-  String resolve(String path, Type type) {
+  Uri uriForType(Type type) {
     var uri = _uriMapping[type];
     if (uri == null) {
       throw new StateError('Unable to find URI mapping for \$type');
     }
-    return AnnotationUriResolver.combine(uri, path);
+    uri;
   }
 }
 

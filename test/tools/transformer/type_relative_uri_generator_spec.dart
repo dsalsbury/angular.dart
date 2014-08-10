@@ -130,7 +130,7 @@ Future generates(List<List<Transformer>> phases,
 const String header = '''
 library a.web.main.generated_type_uris;
 
-import 'package:angular/core_dom/annotation_uri_resolver.dart';
+import 'package:angular/core_dom/type_to_uri_mapper.dart';
 ''';
 
 const String preamble = '''

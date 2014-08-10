@@ -13,14 +13,14 @@ abstract class BoundComponentFactory {
 
   static async.Future<ViewFactory> _viewFuture(
         Component component, ViewCache viewCache, DirectiveMap directives,
-        AnnotationUriResolver uriResolver, Type type) {
+        TypeToUriMapper uriMapper, Type type) {
     if (component.template != null) {
-      var baseUri = uriResolver.resolve(null,  type);
+      var baseUri = uriMapper.uriForType(type);
       return new async.Future.value(viewCache.fromHtml(component.template, directives, baseUri));
     }
     if (component.templateUrl != null) {
-      var url = uriResolver.resolve(component.templateUrl, type);
-      var baseUri = Uri.parse(url).toString();
+      var url = uriMapper.combineWithType(type, component.templateUrl);
+      var baseUri = Uri.parse(url);
       return viewCache.fromUrl(url, directives, baseUri);
     }
     return null;
@@ -47,13 +47,13 @@ class ShadowDomComponentFactory implements ComponentFactory {
   final dom.NodeTreeSanitizer treeSanitizer;
   final Expando expando;
   final CompilerConfig config;
-  final AnnotationUriResolver uriResolver;
+  final TypeToUriMapper uriMapper;
 
   final Map<_ComponentAssetKey, async.Future<dom.StyleElement>> styleElementCache = {};
 
   ShadowDomComponentFactory(this.viewCache, this.http, this.templateCache, this.platform,
                             this.componentCssRewriter, this.treeSanitizer, this.expando,
-                            this.config, this.uriResolver, CacheRegister cacheRegister) {
+                            this.config, this.uriMapper, CacheRegister cacheRegister) {
     cacheRegister.registerCache("ShadowDomComponentFactoryStyles", styleElementCache);
   }
 
@@ -81,20 +81,20 @@ class BoundShadowDomComponentFactory implements BoundComponentFactory {
         _component,
         new PlatformViewCache(_f.viewCache, _tag, _f.platform),
         _directives,
-        _f.uriResolver,
+        _f.uriMapper,
         _ref.type);
   }
 
   async.Future<dom.StyleElement> _styleFuture(cssUrl, {resolveUri: true}) {
     if (resolveUri)
-      cssUrl = _f.uriResolver.resolve(cssUrl, _ref.type);
+      cssUrl = _f.uriMapper.combineWithType(_ref.type, cssUrl);
 
     Http http = _f.http;
     TemplateCache templateCache = _f.templateCache;
     WebPlatform platform = _f.platform;
     ComponentCssRewriter componentCssRewriter = _f.componentCssRewriter;
     dom.NodeTreeSanitizer treeSanitizer = _f.treeSanitizer;
-    ResourceUrlResolver urlResolver = new ResourceUrlResolver();
+    ResourceUrlResolver urlResolver = new ResourceUrlResolver(_f.uriMapper);
 
     return _f.styleElementCache.putIfAbsent(
         new _ComponentAssetKey(_tag, cssUrl), () =>

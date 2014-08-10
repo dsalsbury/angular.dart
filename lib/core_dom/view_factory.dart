@@ -136,17 +136,16 @@ class ViewCache {
   final dom.NodeTreeSanitizer treeSanitizer;
   final dom.HtmlDocument parseDocument =
       dom.document.implementation.createHtmlDocument('');
-  ResourceUrlResolver resourceResolver;
+  final ResourceUrlResolver resourceResolver;
 
-  ViewCache(this.http, this.templateCache, this.compiler, this.treeSanitizer, CacheRegister cacheRegister) {
-    resourceResolver = new ResourceUrlResolver();
+  ViewCache(this.http, this.templateCache, this.compiler, this.treeSanitizer, this.resourceResolver, CacheRegister cacheRegister) {
     cacheRegister.registerCache('viewCache', viewFactoryCache);
   }
 
-  ViewFactory fromHtml(String html, DirectiveMap directives, [String baseUrl]) {
+  ViewFactory fromHtml(String html, DirectiveMap directives, [Uri baseUri]) {
     ViewFactory viewFactory = viewFactoryCache.get(html);
-    if (baseUrl != null)
-      html = resourceResolver.resolveHtml(html, Uri.parse(baseUrl));
+    if (baseUri != null)
+      html = resourceResolver.resolveHtml(html, baseUri);
     else
       html = resourceResolver.resolveHtml(html);
 
@@ -160,12 +159,12 @@ class ViewCache {
     return viewFactory;
   }
 
-  async.Future<ViewFactory> fromUrl(String url, DirectiveMap directives, String baseUrl) {
+  async.Future<ViewFactory> fromUrl(String url, DirectiveMap directives, [Uri baseUri]) {
     ViewFactory viewFactory = viewFactoryCache.get(url);
     if (viewFactory == null) {
       return http.get(url, cache: templateCache).then((resp) {
         var viewFactoryFromHttp = fromHtml(resourceResolver.resolveHtml(
-                                           resp.responseText, Uri.parse(baseUrl)), directives);
+                                           resp.responseText, baseUri), directives);
         viewFactoryCache.put(url, viewFactoryFromHttp);
         return viewFactoryFromHttp;
       });

@@ -13,7 +13,8 @@ main() {
         ..bind(WebPlatformTestComponentWithAttribute)
         ..bind(InnerComponent)
         ..bind(OuterComponent)
-        ..bind(WebPlatform, toValue: new WebPlatform());
+        ..bind(WebPlatform, toValue: new WebPlatform())
+        ..bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: true));
     });
 
     it('should scope styles to shadow dom across browsers.',

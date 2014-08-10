@@ -74,10 +74,10 @@ class TranscludingComponentFactory implements ComponentFactory {
   final Expando expando;
   final ViewCache viewCache;
   final CompilerConfig config;
-  final AnnotationUriResolver uriResolver;
+  final TypeToUriMapper uriMapper;
 
   TranscludingComponentFactory(this.expando, this.viewCache, this.config,
-      this.uriResolver);
+      this.uriMapper);
 
   bind(DirectiveRef ref, directives) =>
       new BoundTranscludingComponentFactory(this, ref, directives);
@@ -96,7 +96,7 @@ class BoundTranscludingComponentFactory implements BoundComponentFactory {
         _component,
         _f.viewCache,
         _directives,
-        _f.uriResolver,
+        _f.uriMapper,
         _ref.type);
   }
 

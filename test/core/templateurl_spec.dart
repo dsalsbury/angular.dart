@@ -69,7 +69,8 @@ void main() {
       beforeEachModule((Module module) {
         module
             ..bind(HtmlAndCssComponent)
-            ..bind(UrlRewriter, toImplementation: PrefixedUrlRewriter);
+            ..bind(UrlRewriter, toImplementation: PrefixedUrlRewriter)
+            ..bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: true));
       });
 
       it('should use the UrlRewriter for both HTML and CSS URLs', async(
@@ -107,7 +108,8 @@ void main() {
             ..bind(HttpUrlComponent)
             ..bind(HtmlAndCssComponent)
             ..bind(OnlyCssComponent)
-            ..bind(InlineWithCssComponent);
+            ..bind(InlineWithCssComponent)
+            ..bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: true));
       });
 
       testResolution(description, expected, component) {
@@ -282,7 +284,8 @@ void main() {
       beforeEachModule((Module module) {
         module
             ..bind(LogAttrDirective)
-            ..bind(HtmlAndMultipleCssComponent);
+            ..bind(HtmlAndMultipleCssComponent)
+            ..bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: true));
       });
 
       it('should load multiple CSS files into a style', async(
@@ -314,7 +317,8 @@ void main() {
       beforeEachModule((Module module) {
         module
             ..bind(HtmlAndCssComponent)
-            ..bind(TemplateCache, toValue: new TemplateCache(capacity: 0));
+            ..bind(TemplateCache, toValue: new TemplateCache(capacity: 0))
+            ..bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: true));
       });
 
       it('should load css from the style cache for the second component', async(

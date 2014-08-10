@@ -1,14 +1,24 @@
-library angular.core_dom.annotation_uri_resolver;
+library angular.core_dom.type_to_uri_mapper;
 
 import 'package:path/path.dart' as native_path;
 
 final _path = native_path.url;
 
 /// Utility to convert type-relative URIs to be page-relative.
-abstract class AnnotationUriResolver {
-  String resolve(String uri, Type type);
-
+abstract class TypeToUriMapper {
+  final ResourceResolverConfig _resourceResolverConfig;
+  final String baseUri = Uri.base.toString();
+  
+  TypeToUriMapper(this._resourceResolverConfig);
+  
   static final RegExp _libraryRegExp = new RegExp(r'/packages/');
+  
+  // to be rewritten for dynamic and static cases
+  Uri uriForType(Type type);
+  
+  String combineWithType(Type type, String uri) {
+    return combine(uriForType(type), uri);
+  }
 
   /// Combines a type-based URI with a relative URI.
   ///
@@ -16,9 +26,11 @@ abstract class AnnotationUriResolver {
   /// URIs, while [uri] is assumed to use 'packages/' syntax for
   /// package-relative URIs. Resulting URIs will use 'packages/' to indicate
   /// package-relative URIs.
-  static String combine(Uri typeUri, String uri) {
-    var resolved;
-
+  String combine(Uri typeUri, String uri) {
+    if (!_resourceResolverConfig.useRelativeUrls) {
+      return uri;
+    }
+    
     if (uri == null) {
       uri = typeUri.path;
     } else {
@@ -28,17 +40,22 @@ abstract class AnnotationUriResolver {
       }
     }
     // If it's not absolute, then resolve it first
-    resolved = typeUri.resolve(uri);
+    Uri resolved = typeUri.resolve(uri);
 
     // If it's package-relative, tack on 'packages/' - Note that eventually
     // we may want to change this to be '/packages/' to make it truly absolute
     if (resolved.scheme == 'package') {
       return 'packages/${resolved.path}';
-    } else if (typeUri.toString().startsWith(Uri.base.toString())) {
+    } else if (typeUri.isAbsolute && typeUri.toString().startsWith(baseUri)) {
       return typeUri.path;
     } else {
       return resolved.toString();
     }
   }
+}
 
+class ResourceResolverConfig {
+  bool useRelativeUrls;
+  
+  ResourceResolverConfig({this.useRelativeUrls});
 }

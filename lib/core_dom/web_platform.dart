@@ -56,8 +56,8 @@ class PlatformViewCache implements ViewCache {
   final WebPlatform platform;
   final dom.HtmlDocument parseDocument =
       dom.document.implementation.createHtmlDocument('');
-  ResourceUrlResolver resourceResolver = new ResourceUrlResolver();
 
+  get resourceResolver => cache.resourceResolver;
   get viewFactoryCache => cache.viewFactoryCache;
   Http get http => cache.http;
   TemplateCache get templateCache => cache.templateCache;
@@ -66,7 +66,7 @@ class PlatformViewCache implements ViewCache {
 
   PlatformViewCache(this.cache, this.selector, this.platform);
 
-  ViewFactory fromHtml(String html, DirectiveMap directives, [String baseUrl]) {
+  ViewFactory fromHtml(String html, DirectiveMap directives, [Uri baseUri]) {
     ViewFactory viewFactory;
 
     if (selector != null && selector != "" && platform.shadowDomShimRequired) {
@@ -77,8 +77,8 @@ class PlatformViewCache implements ViewCache {
       viewFactory = viewFactoryCache.get(html);
     }
 
-    if (baseUrl != null)
-      html = resourceResolver.resolveHtml(html, Uri.parse(baseUrl));
+    if (baseUri != null)
+      html = resourceResolver.resolveHtml(html, baseUri);
     else
       html = resourceResolver.resolveHtml(html);
 
@@ -98,11 +98,11 @@ class PlatformViewCache implements ViewCache {
     return viewFactory;
   }
 
-  async.Future<ViewFactory> fromUrl(String url, DirectiveMap directives, String baseUrl) {
+  async.Future<ViewFactory> fromUrl(String url, DirectiveMap directives, [Uri baseUri]) {
     ViewFactory viewFactory = viewFactoryCache.get(url);
     if (viewFactory == null) {
       return http.get(url, cache: templateCache).then((resp) {
-        var viewFactoryFromHttp = fromHtml(resp.responseText, directives, baseUrl);
+        var viewFactoryFromHttp = fromHtml(resp.responseText, directives, baseUri);
         viewFactoryCache.put(url, viewFactoryFromHttp);
         return viewFactoryFromHttp;
       });

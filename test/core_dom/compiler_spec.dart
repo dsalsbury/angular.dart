@@ -8,6 +8,7 @@ forBothCompilers(fn) {
   describe('walking compiler', () {
     beforeEachModule((Module m) {
       m.bind(Compiler, toImplementation: WalkingCompiler);
+      m.bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: true));
       return m;
     });
     fn('walking');
@@ -16,6 +17,7 @@ forBothCompilers(fn) {
   describe('tagging compiler', () {
     beforeEachModule((Module m) {
       m.bind(Compiler, toImplementation: TaggingCompiler);
+      m.bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: true));
       return m;
     });
     fn('tagging');
@@ -25,6 +27,7 @@ forBothCompilers(fn) {
     beforeEachModule((Module m) {
       m.bind(Compiler, toImplementation: TaggingCompiler);
       m.bind(CompilerConfig, toValue: new CompilerConfig.withOptions(elementProbeEnabled: false));
+      m.bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: true));
       return m;
     });
     fn('tagging-no-elementProbe');
@@ -38,6 +41,7 @@ forAllCompilersAndComponentFactories(fn) {
     beforeEachModule((Module m) {
       m.bind(Compiler, toImplementation: TaggingCompiler);
       m.bind(ComponentFactory, toImplementation: TranscludingComponentFactory);
+      m.bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: true));
 
       return m;
     });

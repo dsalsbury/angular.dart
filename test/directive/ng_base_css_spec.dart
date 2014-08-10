@@ -20,7 +20,8 @@ main() => describe('NgBaseCss', () {
   beforeEachModule((Module module) {
     module
       ..bind(_HtmlAndCssComponent)
-      ..bind(_NoBaseCssComponent);
+      ..bind(_NoBaseCssComponent)
+      ..bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: true));
   });
 
   it('should load css urls from ng-base-css', async((TestBed _, MockHttpBackend backend) {
