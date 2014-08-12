@@ -128,6 +128,7 @@ Options parseArgs(List arguments) {
 
   var options = new Options();
   options.sdkPath = args['sdk-path'];
+  print("dsds: package-root=${args['package-root']}");
   options.packageRoots = args['package-root'].split(',');
   options.templateRoots = args['template-root'].split(',');
   options.output = args['out'];
