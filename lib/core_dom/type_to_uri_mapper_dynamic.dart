@@ -7,7 +7,6 @@ import 'type_to_uri_mapper.dart';
 
 /// Resolves type-relative URIs
 class DynamicTypeToUriMapper extends TypeToUriMapper {
-  DynamicTypeToUriMapper(ResourceResolverConfig config) : super(config);
   Uri uriForType(Type type) {
     var typeMirror = reflectType(type);
     LibraryMirror lib = typeMirror.owner;

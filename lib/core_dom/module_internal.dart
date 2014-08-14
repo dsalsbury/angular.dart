@@ -91,7 +91,8 @@ class CoreDomModule extends Module {
     bind(HttpDefaults);
     bind(HttpInterceptors);
     bind(HttpConfig, toValue: new HttpConfig());
-    bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: false));
+    bind(ResourceResolverConfig, toValue: 
+      new ResourceResolverConfig(useRelativeUrls: false));
     bind(Animate);
     bind(ViewCache);
     bind(BrowserCookies);

@@ -13,17 +13,16 @@ main() {
         ..bind(WebPlatformTestComponentWithAttribute)
         ..bind(InnerComponent)
         ..bind(OuterComponent)
-        ..bind(WebPlatform, toValue: new WebPlatform())
-        ..bind(ResourceResolverConfig, toValue: new ResourceResolverConfig(useRelativeUrls: true));
+        ..bind(WebPlatform, toValue: new WebPlatform());
     });
 
     it('should scope styles to shadow dom across browsers.',
       async((TestBed _, MockHttpBackend backend, WebPlatform platform) {
 
       backend
-        ..expectGET('base/test/core_dom/style.css').respond(200, 'span { background-color: red; '
+        ..expectGET('style.css').respond(200, 'span { background-color: red; '
             '}')
-        ..expectGET('base/test/core_dom/template.html').respond(200, '<span>foo</span>');
+        ..expectGET('template.html').respond(200, '<span>foo</span>');
 
       Element element = e('<span><test-wptc><span>ignore'
         '</span></test-wptc></span>');
@@ -60,9 +59,9 @@ main() {
        async((TestBed _, MockHttpBackend backend, WebPlatform platform) {
 
       backend
-        ..expectGET('base/test/core_dom/style.css').respond(200, 'span { background-color: red; '
+        ..expectGET('style.css').respond(200, 'span { background-color: red; '
       '}')
-        ..expectGET('base/test/core_dom/template.html').respond(200, '<span>foo</span>');
+        ..expectGET('template.html').respond(200, '<span>foo</span>');
 
       Element element = e('<span><test-wptca a><span>ignore'
       '</span></test-wptca></span>');
@@ -78,9 +77,9 @@ main() {
     async((TestBed _, MockHttpBackend backend, WebPlatform platform) {
 
       backend
-        ..expectGET('base/test/core_dom/style.css').respond(200, ':host {'
+        ..expectGET('style.css').respond(200, ':host {'
             'background-color: red; }')
-        ..expectGET('base/test/core_dom/template.html').respond(200, '<span>foo</span>');
+        ..expectGET('template.html').respond(200, '<span>foo</span>');
 
       Element element = e('<span><test-wptc><span>ignore'
         '</span></test-wptc></span>');
@@ -111,10 +110,10 @@ main() {
     async((TestBed _, MockHttpBackend backend, WebPlatform platform) {
 
       backend
-        ..expectGET('base/test/core_dom/style.css').respond(200,
+        ..expectGET('style.css').respond(200,
           "polyfill-next-selector { content: ':host span:not([:host])'; }"
           "::content span { background-color: red; }")
-        ..expectGET('base/test/core_dom/template.html').respond(200,
+        ..expectGET('template.html').respond(200,
           '<span><content></content></span>');
 
       Element element = e('<test-wptc><span>RED'
@@ -219,6 +218,3 @@ class InnerComponent {
     cssUrl: "outer-style.css")
 class OuterComponent {
 }
-
-
-

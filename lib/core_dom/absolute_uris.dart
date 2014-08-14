@@ -22,8 +22,9 @@ class ResourceUrlResolver {
   static final RegExp _quotes = new RegExp('["\']');
   
   final TypeToUriMapper _uriMapper;
+  final ResourceResolverConfig _config;
 
-  ResourceUrlResolver(this._uriMapper);
+  ResourceUrlResolver(this._uriMapper, this._config);
 
   String resolveHtml(String html, [Uri baseUri]) {
     if (baseUri == null) {
@@ -93,7 +94,7 @@ class ResourceUrlResolver {
       if (attrs.containsKey(attr)) {
         var value = attrs[attr];
         if (!value.contains(_urlTemplateSearch)) {
-          attrs[attr] = _uriMapper.combine(baseUri, value).toString();
+          attrs[attr] = combine(baseUri, value).toString();
         }
       }
     }
@@ -103,8 +104,50 @@ class ResourceUrlResolver {
     return cssText.replaceAllMapped(regexp, (match) {
       var url = match[2];
       url = url.replaceAll(_quotes, '');
-      var urlPath = _uriMapper.combine(baseUri, url).toString();
+      var urlPath = combine(baseUri, url).toString();
       return '${match[1]}\'$urlPath\'${match[3]}';
     });
+  }  
+  /// Combines a type-based URI with a relative URI.
+  ///
+  /// [baseUri] is assumed to use package: syntax for package-relative
+  /// URIs, while [uri] is assumed to use 'packages/' syntax for
+  /// package-relative URIs. Resulting URIs will use 'packages/' to indicate
+  /// package-relative URIs.
+  String combine(Uri baseUri, String uri) {
+    if (!_config.useRelativeUrls) {
+       return uri;
+    }
+    
+    if (uri == null) {
+      uri = baseUri.path;
+    } else {
+      // if it's absolute but not package-relative, then just use that
+      if (uri.startsWith("/") || uri.startsWith('packages/')) {
+        return uri;
+      }
+    }
+    // If it's not absolute, then resolve it first
+    Uri resolved = baseUri.resolve(uri);
+
+    // If it's package-relative, tack on 'packages/' - Note that eventually
+    // we may want to change this to be '/packages/' to make it truly absolute
+    if (resolved.scheme == 'package') {
+      return 'packages/${resolved.path}';
+    } else if (uri.startsWith(Uri.base.origin.toString())) {
+      return uri;
+    } else {
+      return resolved.toString();
+    }
   }
+  
+  String combineWithType(Type type, String uri) {
+    return combine(_uriMapper.uriForType(type), uri);
+  }
+}
+
+class ResourceResolverConfig {
+  bool useRelativeUrls;
+  
+  ResourceResolverConfig({this.useRelativeUrls});
 }
