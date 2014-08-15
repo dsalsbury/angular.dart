@@ -60,6 +60,7 @@ export "package:angular/core_dom/module_internal.dart" show
     Response,
     ResponseError,
     ResourceResolverConfig,
+    ResourceUrlResolver,
     UrlRewriter,
     TemplateCache,
     View,

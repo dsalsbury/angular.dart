@@ -60,17 +60,17 @@ class PrefixedUrlRewriter extends UrlRewriter {
   call(url) => "PREFIX:$url";
 }
 
-_run({useRelativeUrls, staticMode}) {
+_run({resolveUrls, staticMode}) {
   var prefix;
-  if (!useRelativeUrls) prefix = "";
+  if (!resolveUrls) prefix = "";
   else if (staticMode) prefix = "packages/test.angular.core_dom/";
   else prefix = "base/test/core/";
   
-  describe('template url useRelativeUrls=${useRelativeUrls}, staticMode=${staticMode}', () {
+  describe('template url resolveUrls=${resolveUrls}, mode=${staticMode ? 'static' : 'dynamic'}', () {
        
     beforeEachModule((Module m) {
       m.bind(ResourceResolverConfig, toValue: 
-        new ResourceResolverConfig(useRelativeUrls: useRelativeUrls));
+        new ResourceResolverConfig(useRelativeUrls: resolveUrls));
 
       if (staticMode) {
         m.bind(TypeToUriMapper, toImplementation: StaticTypeToUriMapper);
@@ -320,8 +320,8 @@ _run({useRelativeUrls, staticMode}) {
 }
 
 void main() {
-  _run(useRelativeUrls: true, staticMode: true);
-  _run(useRelativeUrls: true, staticMode: false);
-  _run(useRelativeUrls: false, staticMode: true);
-  _run(useRelativeUrls: false, staticMode: false);
+  // _run(resolveUrls: true, staticMode: true);
+  _run(resolveUrls: true, staticMode: false);
+  // _run(resolveUrls: false, staticMode: true);
+  // _run(resolveUrls: false, staticMode: false);
 }

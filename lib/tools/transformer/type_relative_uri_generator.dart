@@ -23,7 +23,7 @@ class TypeRelativeUriGenerator extends Transformer with ResolverTransformer {
     var asset = transform.primaryInput;
     var id = asset.id;
     var outputFilename = '${path.url.basenameWithoutExtension(id.path)}'
-        '_type_relative_uris.dart';
+        '_static_type_to_uri_mapper.dart';
     var outputPath = path.url.join(path.url.dirname(id.path), outputFilename);
     var outputId = new AssetId(id.package, outputPath);
 
@@ -70,11 +70,37 @@ class TypeRelativeUriGenerator extends Transformer with ResolverTransformer {
       outputBuffer.write('  ${importPrefixes[type.library]}${type.name}: ');
 
       var uri = resolver.getImportUri(type.library,
-          from: transform.primaryInput.id);
+                                      from: transform.primaryInput.id);
 
-      outputBuffer.write('Uri.parse(\'$uri\'),\n');
+      var acceptable = (
+          (uri.isAbsolute && uri.scheme == "package") ||
+          (uri.toString() == uri.path));
+      if (!acceptable) {
+        var errMsg = 'ERROR: $runtimeType: Type "$type" has unsupported URI $uri';
+        transform.logger.error(errMsg);
+        throw errMsg;
+      }
+      if (uri.scheme != "package") {
+        // this is guaranteed to be a relative URL (e.g. type defined in a path
+        // imported file)
+        var path = transform.primaryInput.id.path;
+        if (!path.startsWith("web/")) {
+          var errMsg = 'ERROR: $runtimeType: Type "$type" is imported as a path not under web.';
+          transform.logger.error(errMsg);
+          throw errMsg;
+        }
+        uri = Uri.parse(path.substring("web/".length)).resolve(uri.path);
+      }
+      // TODO: $uri must be escaped if it contains quotes, etc.
+      outputBuffer.write('Uri.parse("$uri"),\n');
+      transform.logger.warning(
+          'ckck: type=$type(lib=${type.library}), uri=$uri, '
+          'tranform.primaryInput=${transform.primaryInput.id}'
+          );
     }
     _writeFooter(outputBuffer);
+
+    transform.logger.warning('\n\nckck: output=\n$outputBuffer');
 
     transform.addOutput(
           new Asset.fromString(outputId, outputBuffer.toString()));
@@ -92,20 +118,21 @@ import 'package:angular/core_dom/type_to_uri_mapper.dart';
 }
 
 void _writePreamble(StringSink sink) {
-  sink.write('''
+  sink.write(r'''
 
 /// Used when URIs have been converted to be page-relative at build time.
-class _StaticAnnotationUriResolver implements AnnotationUriResolver {
+class _StaticTypeToUriMapper implements TypeToUriMapper {
   Uri uriForType(Type type) {
     var uri = _uriMapping[type];
     if (uri == null) {
-      throw new StateError('Unable to find URI mapping for \$type');
+      throw new StateError('Unable to find URI mapping for $type');
     }
-    uri;
+    print("ckck: $runtimeType: $type → $uri");
+    return uri;
   }
 }
 
-final uriResolver = new _StaticAnnotationUriResolver();
+final typeToUriMapper = new _StaticTypeToUriMapper();
 
 final Map<Type, Uri> _uriMapping = <Type, Uri> {
 ''');

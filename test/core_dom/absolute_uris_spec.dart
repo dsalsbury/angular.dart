@@ -6,137 +6,188 @@ import 'package:angular/core_dom/type_to_uri_mapper_dynamic.dart';
 import '../_specs.dart';
 
 
-_run({useRelativeUrls, staticMode}) {
-  describe("url resolution: staticMode=$staticMode, useRelativeUrls=$useRelativeUrls", () {
+_run({useRelativeUrls}) {
+  describe("resolveUrls=$useRelativeUrls", () {
     var prefix = useRelativeUrls ? "packages/angular/test/core_dom/" : "";
     var container;
     var urlResolver;
-  
+
     beforeEach((ResourceUrlResolver _urlResolver) {
       urlResolver = _urlResolver;
       container = document.createElement('div');
       document.body.append(container);
     });
-    
+
     afterEach(() {
       urlResolver = null;
       container.remove();
     });
-    
+
     beforeEachModule((Module module) {
       module
-       ..bind(ResourceResolverConfig, toValue: 
+       ..bind(ResourceResolverConfig, toValue:
             new ResourceResolverConfig(useRelativeUrls: useRelativeUrls))
        ..bind(TypeToUriMapper, toImplementation: DynamicTypeToUriMapper);
     });
-    
-    var originalBase = Uri.base;
-    var setHttp = true;    
-    testResolution(url, expected) {
-      var http = setHttp;
-      var title = "";
-      if (!useRelativeUrls || http) {
-        expected = url;
-        title += "should not resolve";
+
+    // Our tests depend on this to test http:// URL resolution (e.g. when the
+    // type's library scheme is http.)
+    assert(Uri.base.scheme == "http" || Uri.base.scheme == "https");
+
+    toAppUrl(url) {
+      var marker = "HTTP://LOCALHOST/";
+      if (url.startsWith(marker)) {
+        return "${Uri.base.origin}/${url.substring(marker.length)}";
+      } else {
+        return url;
       }
-      
-      var baseUri = originalBase;
-      title += staticMode ? " staticMode: true" : " staticMode: false";
-      title += useRelativeUrls ? " should go through resolution: true " : " should go through resolution: false";
-      it('${title}: resolves attribute URIs $url to $expected', (ResourceUrlResolver resourceResolver) {
-        var html = resourceResolver.resolveHtml("<img src='$url'>", baseUri);
+    }
+
+    testResolution(typeOrIncludeUri, urlToResolve, expected) {
+      it('should resolve $urlToResolve to $expected', (ResourceUrlResolver resourceResolver) {
+        var html = resourceResolver.resolveHtml("<img src='$urlToResolve'>", typeOrIncludeUri);
         expect(html).toEqual('<img src="$expected">');
       });
+
+      it('should resolve URIs in template: $urlToResolve to $expected', () {
+        expect(urlResolver.resolveHtml('''
+          <template>
+            <img src="$urlToResolve">
+          </template>''', typeOrIncludeUri)).toEqual('''
+          <template>
+            <img src="$expected">
+          </template>''');
+      });
+
+      // TODO
+      // background-image: url(http://foo.com/a/b\(asd\).css);
+      // background-image: url(   http://foo.com/a/b\(asd\).css   );
+      // background-image: url('http://foo.com/a/b\(asd\).css');
+      // background-image: url(   'http://foo.com/a/b\(asd\).css'  );
+      // background-image: url("http://foo.com/a/b\(asd\).css");
+      // background-image: url(   "http://foo.com/a/b\(asd\).css"  );
+
+      it('should resolve CSS URIs in template: $urlToResolve to $expected', (ResourceUrlResolver resourceResolver) {
+        var html_style = ('''
+          <style>
+            body {
+              background-image: url($urlToResolve);
+            }
+          </style>''');
+
+        html_style = resourceResolver.resolveHtml(html_style, typeOrIncludeUri).toString();
+
+        var resolved_style = ('''
+          <style>
+            body {
+              background-image: url('$expected');
+            }
+          </style>''');
+        expect(html_style).toEqual(resolved_style);
+      });
+
+      it('should resolve @import URIs in template: $urlToResolve to $expected', (ResourceUrlResolver resourceResolver) {
+        var html_style = ('''
+          <style>
+            @import url("$urlToResolve");
+            @import '$urlToResolve';
+          </style>''');
+
+        html_style = resourceResolver.resolveHtml(html_style, typeOrIncludeUri).toString();
+
+        var resolved_style = ('''
+          <style>
+            @import url('$expected');
+            @import '$expected';
+          </style>''');
+        expect(html_style).toEqual(resolved_style);
+      });
     }
-    
-    // Set originalBase to an http URL type instead of a 'package:' URL (because of
-    // the way karma runs the tests) and ensure that after resolution, the result doesn't
-    // have a protocol or domain but contains the full path    
-    testResolution(Uri.base.resolve('packages/angular/test/core_dom/foo.html').toString(),
-        'packages/angular/test/core_dom/foo.html');
-    testResolution(Uri.base.resolve('foo.html').toString(),
-        'packages/angular/test/core_dom/foo.html');
-    testResolution(Uri.base.resolve('./foo.html').toString(),
-        'packages/angular/test/core_dom/foo.html');
-    testResolution(Uri.base.resolve('/foo.html').toString(),
-        '/foo.html');    
-    
 
-    originalBase = Uri.parse('package:angular/test/core_dom/absolute_uris_spec.dart');
-    setHttp = false;
+    testBothSchemes({urlToResolve, expectedForPackageScheme, expectedForHttpScheme}) {
+      assert(urlToResolve != null && expectedForPackageScheme != null && expectedForHttpScheme != null);
 
-    testResolution('packages/angular/test/core_dom/foo.html', 'packages/angular/test/core_dom/foo.html');
-    testResolution('foo.html', 'packages/angular/test/core_dom/foo.html');
-    testResolution('./foo.html', 'packages/angular/test/core_dom/foo.html');
-    testResolution('/foo.html', '/foo.html');
-    testResolution('http://google.com/foo.html', 'http://google.com/foo.html');
- 
-    
-    
-    // Set originalBase back
+      urlToResolve = toAppUrl(urlToResolve);
 
-    templateResolution(url, expected) {
-      if (!useRelativeUrls)
-        expected = url;
-      expect(urlResolver.resolveHtml('''
-        <template>
-          <img src="$url">
-        </template>''', originalBase)).toEqual('''
-        <template>
-          <img src="$expected">
-        </template>''');
+      // If we're not resolving URLs, then it should be unchanged.
+      if (!useRelativeUrls) {
+        expectedForPackageScheme = urlToResolve;
+        expectedForHttpScheme = urlToResolve;
+      }
+
+      describe('scheme=package', () {
+        // test the cases where we're resolving URLs for a component/decorator whose
+        // type URI looks like
+        // package:angular/test/core_dom/absolute_uris_spec.dart.
+        var typeOrIncludeUri = Uri.parse('package:angular/test/core_dom/absolute_uris_spec.dart');
+        testResolution(typeOrIncludeUri, urlToResolve, expectedForPackageScheme);
+      });
+
+      describe('scheme=http', () {
+        // A type URI need not always be a package: URI.  This can happen when:
+        // • the type was defined in a Dart file that was
+        //   imported via a path, e.g. "import 'web/bar.dart'".  (karma does this.)
+        // • we are ng-include'ing a file, say, "a/b/foo.html", and we are trying to
+        //   resolve paths inside foo.html.  Those should be resolved relative to
+        //   something like http://localhost:8765/a/b/foo.html.
+        var typeOrIncludeUri = Uri.parse(toAppUrl('HTTP://LOCALHOST/a/b/included_template.html'));
+        testResolution(typeOrIncludeUri, urlToResolve, expectedForHttpScheme);
+      });
     }
 
-    it('resolves template contents', () {
-      templateResolution('foo.png', 'packages/angular/test/core_dom/foo.png');
-    });
+    // These tests check resolving with respect to paths that folks would have
+    // typed by hand - either in the component annotation (templateUrl/cssUrl)
+    // to ng-include / routing.
+    // They also check resolving with respect to paths that were obtained by
+    // typeToUri(type) when it returns a non-absolute path.
 
-    it('does not change absolute urls when they are resolved', () {
-      templateResolution('/foo/foo.png', '/foo/foo.png');
-    });
+    // "packages/" paths, though relative, should never be resolved.
+    testBothSchemes(
+        urlToResolve:             'packages/angular/test/core_dom/foo.html',
+        expectedForPackageScheme: 'packages/angular/test/core_dom/foo.html',
+        expectedForHttpScheme:    'packages/angular/test/core_dom/foo.html');
 
-    it('resolves CSS URIs', (ResourceUrlResolver resourceResolver) {
-      var html_style = ('''
-        <style>
-          body {
-            background-image: url(foo.png);
-          }
-        </style>''');
+    testBothSchemes(
+        urlToResolve:             'package:a.b/c/d/foo2.html',
+        expectedForPackageScheme: 'packages/a.b/c/d/foo2.html',
+        expectedForHttpScheme:    'packages/a.b/c/d/foo2.html');
 
-      html_style = resourceResolver.resolveHtml(html_style, originalBase).toString();
+    testBothSchemes(
+        urlToResolve:             'image.png',
+        expectedForPackageScheme: 'packages/angular/test/core_dom/image.png',
+        expectedForHttpScheme:    'a/b/image.png');
 
-      var resolved_style = ('''
-        <style>
-          body {
-            background-image: url('${prefix}foo.png');
-          }
-        </style>''');
-      expect(html_style).toEqual(resolved_style);
-    });
+    testBothSchemes(
+        urlToResolve:             './image2.png',
+        expectedForPackageScheme: 'packages/angular/test/core_dom/image2.png',
+        expectedForHttpScheme:    'a/b/image2.png');
 
-    it('resolves @import URIs', (ResourceUrlResolver resourceResolver) {
-      var html_style = ('''
-        <style>
-          @import url("foo.css");
-          @import 'bar.css';
-        </style>''');
+    testBothSchemes(
+        urlToResolve:             '/image3.png',
+        expectedForPackageScheme: '/image3.png',
+        expectedForHttpScheme:    '/image3.png');
 
-      html_style = resourceResolver.resolveHtml(html_style, originalBase).toString();
+    testBothSchemes(
+        urlToResolve:             'http://www.google.com/something',
+        expectedForPackageScheme: 'http://www.google.com/something',
+        expectedForHttpScheme:    'http://www.google.com/something');
 
-      var resolved_style = ('''
-        <style>
-          @import url('${prefix}foo.css');
-          @import '${prefix}bar.css';
-        </style>''');
-      expect(html_style).toEqual(resolved_style);
-    });
+    testBothSchemes(
+        urlToResolve:             'HTTP://LOCALHOST/a/b/image4.png',
+        expectedForPackageScheme: 'a/b/image4.png',
+        expectedForHttpScheme:    'a/b/image4.png');
+
+    testBothSchemes(
+        urlToResolve:             'HTTP://LOCALHOST/packages/angular/test/core_dom/foo3.html',
+        expectedForPackageScheme: 'packages/angular/test/core_dom/foo3.html',
+        expectedForHttpScheme:    'packages/angular/test/core_dom/foo3.html');
+
   });
 }
 
 void main() {
   describe('url_resolver', () {
-    _run(useRelativeUrls: true, staticMode: true);
-    _run(useRelativeUrls: false, staticMode: true);//TODO get rid of staticMode
+    _run(useRelativeUrls: true);
   });
 }
 

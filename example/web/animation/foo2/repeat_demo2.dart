@@ -1,13 +1,14 @@
-part of animation;
+library foo2_repeat_demo;
+
+import 'package:angular/angular.dart';
 
 @Component(
-    selector: 'repeat-demo',
+    selector: 'repeat-demo2',
     useShadowDom: false,
-    templateUrl: 'repeat_demo.html',
-    // templateUrl: 'animation/repeat_demo.html',
+    templateUrl: 'repeat_demo2.html',
     publishAs: 'ctrl',
     applyAuthorStyles: true)
-class RepeatDemo {
+class RepeatDemo2 {
   var thing = 0;
   final items = [];
 

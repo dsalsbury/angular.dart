@@ -19,6 +19,7 @@ abstract class BoundComponentFactory {
       return new async.Future.value(viewCache.fromHtml(component.template, directives, baseUri));
     }
     if (component.templateUrl != null) {
+      print("ckck: type=$type");
       var url = resourceResolver.combineWithType(type, component.templateUrl);
       var baseUri = Uri.parse(url);
       return viewCache.fromUrl(url, directives, baseUri);

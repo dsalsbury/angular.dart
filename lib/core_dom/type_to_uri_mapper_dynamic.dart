@@ -10,6 +10,7 @@ class DynamicTypeToUriMapper extends TypeToUriMapper {
   Uri uriForType(Type type) {
     var typeMirror = reflectType(type);
     LibraryMirror lib = typeMirror.owner;
+    print("ckck: $runtimeType: $type → ${lib.uri}");
     return lib.uri;
   }
 }

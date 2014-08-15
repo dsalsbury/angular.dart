@@ -5,6 +5,10 @@
     <link type="text/css" rel="stylesheet" href="css/animation.css" />
 </head>
 <body class="ng-cloak" ng-app animation-demo>
+
+<ck-foo></ck-foo>
+<repeat-demo2></repeat-demo2>
+
   <nav>
     <button ng-repeat="page in demo.pages"
         ng-click="demo.currentPage = page"
@@ -40,7 +44,7 @@
       <stress-demo></stress-demo>
     </div>
   </div>
-<script type="application/dart" src="animation.dart"></script>
+<script type="application/dart" src="animation/main.dart"></script>
 <script src="packages/browser/dart.js"></script>
 </body>
 </html>

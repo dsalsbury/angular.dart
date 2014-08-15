@@ -6,13 +6,20 @@
  * URIs.
  */
 
+
+// TODO: Rename this library to a better name than absolute_uris.dart
+
+
 library angular.core_dom.absolute_uris;
 
 import 'dart:html';
 import 'dart:js' as js;
 
+import 'package:di/di.dart';
+
 import 'package:angular/core_dom/type_to_uri_mapper.dart';
 
+@Injectable()
 class ResourceUrlResolver {
   static final RegExp _cssUrlRegexp = new RegExp(r'(\burl\()([^)]*)(\))');
   static final RegExp _cssImportRegexp = new RegExp(r'(@import[\s]+(?!url\())([^;]*)(;)');
@@ -21,6 +28,9 @@ class ResourceUrlResolver {
   static final RegExp _urlTemplateSearch = new RegExp('{{.*}}');
   static final RegExp _quotes = new RegExp('["\']');
   
+  // Ensures that Uri.base is http/https.
+  final _baseUri = Uri.base.origin + ("/");
+
   final TypeToUriMapper _uriMapper;
   final ResourceResolverConfig _config;
 
@@ -114,7 +124,7 @@ class ResourceUrlResolver {
   /// URIs, while [uri] is assumed to use 'packages/' syntax for
   /// package-relative URIs. Resulting URIs will use 'packages/' to indicate
   /// package-relative URIs.
-  String combine(Uri baseUri, String uri) {
+  String _combine(Uri baseUri, String uri) {
     if (!_config.useRelativeUrls) {
        return uri;
     }
@@ -123,6 +133,11 @@ class ResourceUrlResolver {
       uri = baseUri.path;
     } else {
       // if it's absolute but not package-relative, then just use that
+      // The "packages/" test is just for backward compatibility.  It's ok to
+      // not resolve them, even through they're relative URLs, because in a Dart
+      // application, "packages/" is managed by pub which creates a symlinked
+      // hierarchy and they should all resolve to the same file at any level
+      // that a "packages/" exists.
       if (uri.startsWith("/") || uri.startsWith('packages/')) {
         return uri;
       }
@@ -134,18 +149,30 @@ class ResourceUrlResolver {
     // we may want to change this to be '/packages/' to make it truly absolute
     if (resolved.scheme == 'package') {
       return 'packages/${resolved.path}';
-    } else if (uri.startsWith(Uri.base.origin.toString())) {
-      return uri;
+    } else if (resolved.isAbsolute && resolved.toString().startsWith(_baseUri)) {
+      var path = resolved.path;
+      return path.startsWith("/") ? path.substring(1) : path;
     } else {
       return resolved.toString();
     }
   }
   
+  String combine(Uri baseUri, String uri) {
+    var result = _combine(baseUri, uri);
+    print("ckck: $runtimeType: combine($baseUri, $uri) → $result");
+    return result;
+  }
+
   String combineWithType(Type type, String uri) {
-    return combine(_uriMapper.uriForType(type), uri);
+    if (_config.useRelativeUrls) {
+      return combine(_uriMapper.uriForType(type), uri);
+    } else {
+      return uri;
+    }
   }
 }
 
+@Injectable()
 class ResourceResolverConfig {
   bool useRelativeUrls;
   
