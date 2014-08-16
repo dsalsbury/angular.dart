@@ -21,12 +21,13 @@ import 'package:angular/core_dom/type_to_uri_mapper.dart';
 
 @Injectable()
 class ResourceUrlResolver {
-  static final RegExp _cssUrlRegexp = new RegExp(r'(\burl\()([^)]*)(\))');
-  static final RegExp _cssImportRegexp = new RegExp(r'(@import[\s]+(?!url\())([^;]*)(;)');
-  static const List<String> _urlAttrs = const ['href', 'src', 'action'];
-  static final String _urlAttrsSelector = '[${_urlAttrs.join('],[')}]';
-  static final RegExp _urlTemplateSearch = new RegExp('{{.*}}');
-  static final RegExp _quotes = new RegExp('["\']');
+  //TODO: this does not currently accept urls with quotes in it
+  static final RegExp cssUrlRegexp = new RegExp(r'(\burl\((?:[\s]+)?)([^)]*)(\))');
+  static final RegExp cssImportRegexp = new RegExp(r'(@import[\s]+(?!url\())([^;]*)(;)');
+  static const List<String> urlAttrs = const ['href', 'src', 'action'];
+  static final String urlAttrsSelector = '[${urlAttrs.join('],[')}]';
+  static final RegExp urlTemplateSearch = new RegExp('{{.*}}');
+  static final RegExp quotes = new RegExp("[\"\']");
   
   // Ensures that Uri.base is http/https.
   final _baseUri = Uri.base.origin + ("/");
@@ -84,8 +85,8 @@ class ResourceUrlResolver {
   }
 
   String resolveCssText(String cssText, Uri baseUri) {
-    cssText = _replaceUrlsInCssText(cssText, baseUri, _cssUrlRegexp);
-    return _replaceUrlsInCssText(cssText, baseUri, _cssImportRegexp);
+    cssText = _replaceUrlsInCssText(cssText, baseUri, cssUrlRegexp);
+    return _replaceUrlsInCssText(cssText, baseUri, cssImportRegexp);
   }
 
   void _resolveAttributes(Node root, Uri baseUri) {
@@ -93,17 +94,17 @@ class ResourceUrlResolver {
       _resolveElementAttributes(root, baseUri);
     }
 
-    for (var node in _querySelectorAll(root, _urlAttrsSelector)) {
+    for (var node in _querySelectorAll(root, urlAttrsSelector)) {
       _resolveElementAttributes(node, baseUri);
     }
   }
 
   void _resolveElementAttributes(Element element, Uri baseUri) {
     var attrs = element.attributes;
-    for (var attr in _urlAttrs) {
+    for (var attr in urlAttrs) {
       if (attrs.containsKey(attr)) {
         var value = attrs[attr];
-        if (!value.contains(_urlTemplateSearch)) {
+        if (!value.contains(urlTemplateSearch)) {
           attrs[attr] = combine(baseUri, value).toString();
         }
       }
@@ -113,9 +114,9 @@ class ResourceUrlResolver {
   String _replaceUrlsInCssText(String cssText, Uri baseUri, RegExp regexp) {
     return cssText.replaceAllMapped(regexp, (match) {
       var url = match[2];
-      url = url.replaceAll(_quotes, '');
+      url = url.replaceAll(quotes, '');
       var urlPath = combine(baseUri, url).toString();
-      return '${match[1]}\'$urlPath\'${match[3]}';
+      return '${match[1].trim()}${urlPath.trim()}${match[3]}';
     });
   }  
   /// Combines a type-based URI with a relative URI.
@@ -159,7 +160,6 @@ class ResourceUrlResolver {
   
   String combine(Uri baseUri, String uri) {
     var result = _combine(baseUri, uri);
-    print("ckck: $runtimeType: combine($baseUri, $uri) → $result");
     return result;
   }
 

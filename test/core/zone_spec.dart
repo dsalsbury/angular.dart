@@ -433,7 +433,7 @@ void main() {
       expect(async(() {
         zone.assertInTurn();
         microLeap();
-      })).toThrow('ssertion');  // Support both dart2js and the VM with half a word.
+      })).toThrow('assertion');  // Support both dart2js and the VM with half a word.
     });
 
     group('microtask scheduler', () {

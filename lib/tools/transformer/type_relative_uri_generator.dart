@@ -93,14 +93,9 @@ class TypeRelativeUriGenerator extends Transformer with ResolverTransformer {
       }
       // TODO: $uri must be escaped if it contains quotes, etc.
       outputBuffer.write('Uri.parse("$uri"),\n');
-      transform.logger.warning(
-          'ckck: type=$type(lib=${type.library}), uri=$uri, '
-          'tranform.primaryInput=${transform.primaryInput.id}'
-          );
     }
     _writeFooter(outputBuffer);
 
-    transform.logger.warning('\n\nckck: output=\n$outputBuffer');
 
     transform.addOutput(
           new Asset.fromString(outputId, outputBuffer.toString()));
@@ -127,7 +122,6 @@ class _StaticTypeToUriMapper implements TypeToUriMapper {
     if (uri == null) {
       throw new StateError('Unable to find URI mapping for $type');
     }
-    print("ckck: $runtimeType: $type → $uri");
     return uri;
   }
 }

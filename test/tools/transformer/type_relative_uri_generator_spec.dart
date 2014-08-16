@@ -133,20 +133,20 @@ library a.web.main.generated_type_uris;
 import 'package:angular/core_dom/type_to_uri_mapper.dart';
 ''';
 
-const String preamble = '''
+const String preamble = r'''
 
 /// Used when URIs have been converted to be page-relative at build time.
-class _StaticAnnotationUriResolver implements AnnotationUriResolver {
-  String resolve(String path, Type type) {\
+class _StaticTypeToUriMapper implements TypeToUriMapper {
+  Uri uriForType(Type type) {
     var uri = _uriMapping[type];
     if (uri == null) {
-      throw new StateError('Unable to find URI mapping for \$type');
+      throw new StateError('Unable to find URI mapping for $type');
     }
-    return AnnotationUriResolver.combine(uri, path);
+    return uri;
   }
 }
 
-final uriResolver = new _StaticAnnotationUriResolver();
+final typeToUriMapper = new _StaticTypeToUriMapper();
 
 final Map<Type, Uri> _uriMapping = <Type, Uri> {
 ''';
