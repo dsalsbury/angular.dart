@@ -45,7 +45,9 @@ _run_resolver({useRelativeUrls}) {
     
     String urlInImport(cssEscapedUrl) => '<style>@import $cssEscapedUrl</style>'; 
     String urlInBackgroundImg(cssEscapedUrl) => '<style>body { background-image: $cssEscapedUrl }</style>';
-    String urlInTemplate(htmlEscapedUrl) => '<template><img src=\"$htmlEscapedUrl\"></template>';
+    String urlInImgSrc(htmlEscapedUrl) => '<template><img src=\"$htmlEscapedUrl\"></template>';
+    String urlInHref(htmlEscapedUrl) => '<template><a href=\"$htmlEscapedUrl\"></template>';
+    String urlInAction(htmlEscapedUrl) => '<template><form action=\"$htmlEscapedUrl\"></template>';
     
     escapeUrlForCss(String unEscapedUrl) {
       return unEscapedUrl..replaceAll("\\", "\\\\")
@@ -53,29 +55,57 @@ _run_resolver({useRelativeUrls}) {
                          ..replaceAll("\"", "\\\"");  
     }
 
+    testOnCssTemplates(cssEscapedUrl, cssEscapedExpected, typeOrIncludeUri) {
+      it('within an @import', () {
+        var html = resourceResolver.resolveHtml(urlInImport(cssEscapedUrl), typeOrIncludeUri);
+        expect(html).toEqual(urlInImport(cssEscapedExpected));
+      });
+     
+      it('within a background-image: attribute', () {
+        var html = resourceResolver.resolveHtml(urlInBackgroundImg(cssEscapedUrl), typeOrIncludeUri);
+        expect(html).toEqual(urlInBackgroundImg(cssEscapedExpected)); 
+      });
+    }  
+    
+    testOnHtmlTemplate(htmlEscapedUrl, htmlEscapedExpected, typeOrIncludeUri) {    
+     // TODO: url and expected need to be escaped for html
+     it('within an img src attribute', () {
+       var html = resourceResolver.resolveHtml(urlInImgSrc(htmlEscapedUrl), typeOrIncludeUri);
+       expect(html).toEqual(urlInImgSrc(htmlEscapedExpected));
+     });
+    }
+    
     // testOnAllTemplates will insert the url to be resolved into three different types
     // of templates, using several different variations of the css 'url()' function call
     // then attempt to resolve that html and the contained url, and check against the expected url
     testOnAllTemplates(url, expected, typeOrIncludeUri) {
       var urlCssEscaped = escapeUrlForCss(url);
       var expectedCssEscaped = escapeUrlForCss(expected);
-
-      it('within an @import', () {
-        var html = resourceResolver.resolveHtml(urlInImport(urlCssEscaped), typeOrIncludeUri);
-        expect(html).toEqual(urlInImport(expectedCssEscaped));
-      });
-     
-      xit('within a background-image: attribute', () {
-        var html = resourceResolver.resolveHtml(urlInBackgroundImg(urlCssEscaped), typeOrIncludeUri);
-        expect(html).toEqual(urlInBackgroundImg(expectedCssEscaped));
-      });
-       
-      // TODO: url and expected need to be escaped for html
-      xit('within an img src attribute', () {
-        var html = resourceResolver.resolveHtml(urlInTemplate(url), typeOrIncludeUri);
-        expect(html).toEqual(urlInTemplate(expected));
-      });
-    }     
+      
+      var urlHtmlEscaped = Uri.encodeFull(url);
+      
+      testOnCssTemplates("url($urlCssEscaped)",   
+                         "url($expectedCssEscaped)",
+                         typeOrIncludeUri);
+      testOnCssTemplates("url('$urlCssEscaped')",     
+                         "url('$expectedCssEscaped')",
+                         typeOrIncludeUri);
+      testOnCssTemplates("url(\"$urlCssEscaped\")",  
+                         "url(\"$expectedCssEscaped\")",
+                         typeOrIncludeUri); 
+      testOnCssTemplates("url(  $urlCssEscaped  )",  
+                         "url($expectedCssEscaped)",
+                         typeOrIncludeUri); 
+      testOnCssTemplates("url(  '$urlCssEscaped'  )",   
+                         "url('$expectedCssEscaped')",
+                         typeOrIncludeUri); 
+      testOnCssTemplates("url(  \"$urlCssEscaped\"  )",  
+                         "url(\"$expectedCssEscaped\")",
+                         typeOrIncludeUri);
+      testOnHtmlTemplate(urlHtmlEscaped,
+                         expected,
+                         typeOrIncludeUri);
+    }
     
     testResolution(typeOrIncludeUri, urlToResolve, expected) {
       describe('should resolve $urlToResolve to $expected', () {
@@ -86,24 +116,7 @@ _run_resolver({useRelativeUrls}) {
         });
         // More rigorous tests to check that we find the url within various html and css 
         // templates, and properly resolve it
-        testOnAllTemplates("url($urlToResolve)",   
-                           "url($expected)",
-                           typeOrIncludeUri);
-        testOnAllTemplates("url('$urlToResolve')",     
-                           "url($expected)",
-                           typeOrIncludeUri);
-        testOnAllTemplates("url(\"$urlToResolve\")",  
-                           "url($expected)",
-                           typeOrIncludeUri); 
-        testOnAllTemplates("url(  $urlToResolve  )",  
-                           "url($expected)",
-                           typeOrIncludeUri); 
-        testOnAllTemplates("url(  '$urlToResolve'  )",   
-                           "url($expected)",
-                           typeOrIncludeUri); 
-        testOnAllTemplates("url(  \"$urlToResolve\"  )",  
-                           "url($expected)",
-                           typeOrIncludeUri); 
+        testOnAllTemplates(urlToResolve, expected, typeOrIncludeUri);
       });
     } 
 
@@ -175,12 +188,10 @@ _run_resolver({useRelativeUrls}) {
         expectedForPackageScheme: 'http://www.google.com/something',
         expectedForHttpScheme:    'http://www.google.com/something');
     
-    // This checks the edge case where a url contains quotes and/or parentheses
-    // TODO: this should fail for now until we make a better regex
-//    testBothSchemes(
-//        urlToResolve:             'http://www.google.com/something/foo(\'bar)',
-//        expectedForPackageScheme: 'http://www.google.com/something',
-//        expectedForHttpScheme:    'http://www.google.com/something');
+    testBothSchemes(
+        urlToResolve:             '''http://www.google.com/something/foo('bar)''',
+        expectedForPackageScheme: '''http://www.google.com/something/foo('bar)''',
+        expectedForHttpScheme:    '''http://www.google.com/something/foo('bar)''');
 
     testBothSchemes(
         urlToResolve:             'HTTP://LOCALHOST/a/b/image4.png',

@@ -9,7 +9,7 @@ import 'package:unittest/unittest.dart' hide expect;
 import 'package:guinness/guinness.dart';
 
 main() {
-  describe('StaticAngularGenerator', () {
+  ddescribe('StaticAngularGenerator', () {
     var options = new TransformOptions(
         sdkDirectory: dartSdkDirectory);
 

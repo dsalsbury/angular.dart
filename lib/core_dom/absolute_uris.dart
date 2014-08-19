@@ -22,7 +22,7 @@ import 'package:angular/core_dom/type_to_uri_mapper.dart';
 @Injectable()
 class ResourceUrlResolver {
   //TODO: this does not currently accept urls with quotes in it
-  static final RegExp cssUrlRegexp = new RegExp(r'(\burl\((?:[\s]+)?)([^)]*)(\))');
+  static final RegExp cssUrlRegexp = new RegExp(r'''(\burl\((?:[\s]+)?)(['"]?)([^]*)(\2(?:[\s]+)?\))''');
   static final RegExp cssImportRegexp = new RegExp(r'(@import[\s]+(?!url\())([^;]*)(;)');
   static const List<String> urlAttrs = const ['href', 'src', 'action'];
   static final String urlAttrsSelector = '[${urlAttrs.join('],[')}]';
@@ -113,10 +113,9 @@ class ResourceUrlResolver {
 
   String _replaceUrlsInCssText(String cssText, Uri baseUri, RegExp regexp) {
     return cssText.replaceAllMapped(regexp, (match) {
-      var url = match[2];
-      url = url.replaceAll(quotes, '');
+      var url = match[3];
       var urlPath = combine(baseUri, url).toString();
-      return '${match[1].trim()}${urlPath.trim()}${match[3]}';
+      return '${match[1].trim()}${match[2]}${urlPath.trim()}${match[2]})';
     });
   }  
   /// Combines a type-based URI with a relative URI.
